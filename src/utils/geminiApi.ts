@@ -1,3 +1,4 @@
+
 // API key for Gemini
 const API_KEY = "AIzaSyDp2Fr5-ythR2t8GaVDxFgVzgAgL7JBilc";
 
@@ -23,7 +24,7 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
     console.log("Sending text to Gemini API for analysis:", text.substring(0, 50) + "...");
     
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + API_KEY,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + API_KEY,
       {
         method: "POST",
         headers: {
@@ -47,6 +48,7 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
                   
                   Only include actual mistakes, not stylistic suggestions.
                   Return ONLY the JSON object, no additional text.
+                  Be thorough and identify every spelling and grammar error.
                   
                   Text to analyze: "${text}"
                   `,
@@ -55,7 +57,7 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
             },
           ],
           generationConfig: {
-            temperature: 0.2,
+            temperature: 0.1,
             topP: 0.8,
             topK: 40,
             maxOutputTokens: 1024,
