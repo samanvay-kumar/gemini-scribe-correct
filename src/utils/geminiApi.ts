@@ -65,6 +65,12 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
       }
     );
 
+    // Handle rate limiting explicitly
+    if (response.status === 429) {
+      console.error("Gemini API rate limit exceeded");
+      throw new Error("API rate limit exceeded. Please try again later.");
+    }
+
     if (!response.ok) {
       console.error("API Error:", response.status);
       throw new Error(`API Error: ${response.status}`);
@@ -82,11 +88,7 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
       
       if (!jsonMatch) {
         console.error("No JSON found in response:", textContent);
-        return {
-          originalText: text,
-          correctedText: text,
-          corrections: []
-        };
+        throw new Error("Invalid response format from Gemini API");
       }
       
       // Parse the JSON
@@ -100,18 +102,10 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
       };
     } catch (parseError) {
       console.error("Error parsing correction data:", parseError);
-      return {
-        originalText: text,
-        correctedText: text,
-        corrections: []
-      };
+      throw new Error("Failed to parse API response");
     }
   } catch (error) {
     console.error("Error getting corrections:", error);
-    return {
-      originalText: text,
-      correctedText: text,
-      corrections: []
-    };
+    throw error;
   }
 }

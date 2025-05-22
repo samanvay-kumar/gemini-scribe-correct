@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import TextEditor from "@/components/TextEditor";
@@ -23,24 +23,41 @@ const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [correctedText, setCorrectedText] = useState("");
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Function to analyze text
   const analyzeText = useCallback(async (textToAnalyze: string) => {
     if (!textToAnalyze.trim()) {
       setCorrections([]);
+      setApiError(null);
       return;
     }
 
     setIsAnalyzing(true);
+    setApiError(null);
+    
     try {
       const result = await getCorrections(textToAnalyze);
       setCorrections(result.corrections);
       setCorrectedText(result.correctedText);
+      
+      if (result.corrections.length === 0) {
+        // If no corrections were found but text contains obvious errors, show a notice
+        const hasObviousErrors = /[^a-zA-Z0-9\s.,?!'"();\-:]/.test(textToAnalyze) || 
+                                /\s{2,}/.test(textToAnalyze) ||
+                                textToAnalyze.includes("teh") ||
+                                textToAnalyze.includes("gud");
+        
+        if (hasObviousErrors && textToAnalyze.length > 10) {
+          setApiError("The API may be rate limited. Please try again later or with a different text.");
+        }
+      }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to analyze text";
+      setApiError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to analyze text. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       console.error("Error analyzing text:", error);
@@ -48,24 +65,6 @@ const Index = () => {
       setIsAnalyzing(false);
     }
   }, [toast]);
-
-  // Debounce text analysis
-  useEffect(() => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-
-    if (text.trim().length > 10) {
-      const timer = setTimeout(() => {
-        analyzeText(text);
-      }, 1500);
-      setDebounceTimer(timer);
-    }
-
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-    };
-  }, [text, analyzeText, debounceTimer]);
 
   // Handle applying a single correction
   const handleApplyCorrection = (correction: Correction) => {
@@ -182,6 +181,7 @@ const Index = () => {
                 onApplyCorrection={handleApplyCorrection}
                 onApplyAll={handleApplyAll}
                 isAnalyzing={isAnalyzing}
+                apiError={apiError}
               />
             </div>
           </div>

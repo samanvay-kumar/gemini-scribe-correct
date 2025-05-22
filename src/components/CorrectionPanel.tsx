@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { CheckCircle, SpellCheck, RefreshCcw } from "lucide-react";
+import { CheckCircle, SpellCheck, RefreshCcw, AlertCircle } from "lucide-react";
 
 interface CorrectionPanelProps {
   corrections: {
@@ -20,6 +20,7 @@ interface CorrectionPanelProps {
   }) => void;
   onApplyAll: () => void;
   isAnalyzing: boolean;
+  apiError?: string | null;
 }
 
 const CorrectionPanel = ({
@@ -27,6 +28,7 @@ const CorrectionPanel = ({
   onApplyCorrection,
   onApplyAll,
   isAnalyzing,
+  apiError,
 }: CorrectionPanelProps) => {
   if (isAnalyzing) {
     return (
@@ -42,6 +44,30 @@ const CorrectionPanel = ({
             <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
             <p className="text-sm text-muted-foreground">
               Gemini AI is analyzing your text for corrections
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (apiError) {
+    return (
+      <Card className="w-full h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            API Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <p className="text-center text-muted-foreground">
+              {apiError}
+            </p>
+            <p className="text-sm text-center text-muted-foreground">
+              The Gemini API has rate limits that may be affecting your request.
+              Try again with a shorter text or wait a few moments.
             </p>
           </div>
         </CardContent>
