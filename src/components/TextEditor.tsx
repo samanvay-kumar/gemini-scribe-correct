@@ -49,7 +49,7 @@ const TextEditor = ({
       const error = text.substring(startIndex, endIndex);
       const after = text.substring(endIndex);
       
-      text = `${before}<span class="highlight-error" data-start="${startIndex}" data-end="${endIndex}">${error}</span>${after}`;
+      text = `${before}<span class="highlight-error cursor-pointer underline decoration-wavy decoration-red-500" data-start="${startIndex}" data-end="${endIndex}" title="Click to see correction">${error}</span>${after}`;
     });
     
     tempDiv.innerHTML = text || "<br>";
@@ -108,9 +108,10 @@ const TextEditor = ({
       <div
         ref={editorRef}
         className={cn(
-          "editor-container w-full p-3 min-h-[300px] outline-none",
-          "whitespace-pre-wrap break-words",
-          isAnalyzing && "opacity-70"
+          "editor-container w-full p-4 min-h-[300px] outline-none border rounded-md",
+          "whitespace-pre-wrap break-words bg-white",
+          isAnalyzing ? "opacity-70" : "shadow-sm",
+          "focus:ring-2 focus:ring-primary focus:border-primary"
         )}
         contentEditable={!isAnalyzing}
         onInput={handleInput}

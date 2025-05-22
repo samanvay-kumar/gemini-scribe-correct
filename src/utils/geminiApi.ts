@@ -1,5 +1,5 @@
 
-// API key for Gemini - Note: In a production environment, this should be stored securely
+// API key for Gemini
 const API_KEY = "AIzaSyCGBv8SEPld2kU_C5zshIg64wkusSJkaxA";
 
 interface CorrectionResult {
@@ -21,6 +21,8 @@ interface Correction {
  */
 export async function getCorrections(text: string): Promise<CorrectionResult> {
   try {
+    console.log("Sending text to Gemini API for analysis:", text.substring(0, 50) + "...");
+    
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + API_KEY,
       {
@@ -64,10 +66,12 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
     );
 
     if (!response.ok) {
+      console.error("API Error:", response.status);
       throw new Error(`API Error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log("Received response from Gemini API");
     
     try {
       // Extract the JSON string from the response
@@ -87,6 +91,7 @@ export async function getCorrections(text: string): Promise<CorrectionResult> {
       
       // Parse the JSON
       const correctionData = JSON.parse(jsonMatch[0]);
+      console.log("Extracted corrections:", correctionData.corrections?.length || 0);
       
       return {
         originalText: text,

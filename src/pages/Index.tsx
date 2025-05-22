@@ -7,6 +7,7 @@ import CorrectionPanel from "@/components/CorrectionPanel";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getCorrections } from "@/utils/geminiApi";
+import { Sparkles, SpellCheck } from "lucide-react";
 
 interface Correction {
   original: string;
@@ -142,8 +143,9 @@ const Index = () => {
       <main className="flex-1 container px-4 py-8">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Improve Your Writing with AI
+            <h1 className="text-3xl font-bold tracking-tight flex items-center justify-center gap-2">
+              <SpellCheck className="h-8 w-8 text-primary" />
+              Grammar Correction with Gemini AI
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Write or paste your text below and get instant grammar and spelling corrections
@@ -152,27 +154,26 @@ const Index = () => {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Your Text</h2>
-                  <Button 
-                    onClick={handleCheckText}
-                    disabled={isAnalyzing || !text.trim()}
-                  >
-                    Check Text
-                  </Button>
-                </div>
-                <TextEditor 
-                  value={text}
-                  onChange={setText}
-                  corrections={corrections}
-                  onCorrectionClick={handleCorrectionClick}
-                  isAnalyzing={isAnalyzing}
-                />
-                <div className="text-xs text-muted-foreground">
-                  *Click on highlighted text to see correction options
-                </div>
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Your Text</h2>
+                <Button 
+                  onClick={handleCheckText}
+                  disabled={isAnalyzing || !text.trim()}
+                  className="gap-1"
+                >
+                  <Sparkles className="h-4 w-4" /> Check Text
+                </Button>
+              </div>
+              <TextEditor 
+                value={text}
+                onChange={setText}
+                corrections={corrections}
+                onCorrectionClick={handleCorrectionClick}
+                isAnalyzing={isAnalyzing}
+              />
+              <div className="text-xs text-muted-foreground">
+                *Click on highlighted text to see correction options or use the panel on the right
               </div>
             </div>
             <div>
