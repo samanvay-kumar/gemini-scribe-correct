@@ -1,0 +1,123 @@
+
+import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
+
+interface TextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  corrections: {
+    original: string;
+    suggestion: string;
+    startIndex: number;
+    endIndex: number;
+    explanation?: string;
+  }[];
+  onCorrectionClick: (correction: {
+    original: string;
+    suggestion: string;
+    startIndex: number;
+    endIndex: number;
+    explanation?: string;
+  }) => void;
+  isAnalyzing: boolean;
+}
+
+const TextEditor = ({ 
+  value, 
+  onChange, 
+  corrections, 
+  onCorrectionClick,
+  isAnalyzing
+}: TextEditorProps) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+  
+  // Apply highlights to the text
+  useEffect(() => {
+    if (!editorRef.current || isAnalyzing) return;
+    
+    // Create a temporary div to hold the text with highlights
+    const tempDiv = document.createElement("div");
+    let text = value;
+    
+    // Sort corrections by start index in descending order to avoid index issues when replacing
+    const sortedCorrections = [...corrections].sort((a, b) => b.startIndex - a.startIndex);
+    
+    // Wrap each error with a span
+    sortedCorrections.forEach(correction => {
+      const { startIndex, endIndex, original } = correction;
+      const before = text.substring(0, startIndex);
+      const error = text.substring(startIndex, endIndex);
+      const after = text.substring(endIndex);
+      
+      text = `${before}<span class="highlight-error" data-start="${startIndex}" data-end="${endIndex}">${error}</span>${after}`;
+    });
+    
+    tempDiv.innerHTML = text || "<br>";
+    
+    // Replace the editor content with the highlighted text
+    if (editorRef.current) {
+      // Save the current selection
+      const selection = window.getSelection();
+      let range: Range | null = null;
+      let selectionExisted = false;
+      
+      if (selection && selection.rangeCount > 0) {
+        range = selection.getRangeAt(0);
+        selectionExisted = editorRef.current.contains(range.commonAncestorContainer);
+      }
+      
+      // Update the HTML
+      editorRef.current.innerHTML = tempDiv.innerHTML;
+      
+      // Add click event listeners to highlighted spans
+      const spans = editorRef.current.querySelectorAll(".highlight-error");
+      spans.forEach(span => {
+        span.addEventListener("click", () => {
+          const start = parseInt(span.getAttribute("data-start") || "0");
+          const end = parseInt(span.getAttribute("data-end") || "0");
+          
+          const clickedCorrection = corrections.find(
+            c => c.startIndex === start && c.endIndex === end
+          );
+          
+          if (clickedCorrection) {
+            onCorrectionClick(clickedCorrection);
+          }
+        });
+      });
+      
+      // Restore selection if it existed
+      if (selectionExisted && range) {
+        try {
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        } catch (e) {
+          console.log("Could not restore selection");
+        }
+      }
+    }
+  }, [value, corrections, isAnalyzing, onCorrectionClick]);
+  
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const text = e.currentTarget.innerText || "";
+    onChange(text);
+  };
+
+  return (
+    <div className="w-full">
+      <div
+        ref={editorRef}
+        className={cn(
+          "editor-container w-full p-3 min-h-[300px] outline-none",
+          "whitespace-pre-wrap break-words",
+          isAnalyzing && "opacity-70"
+        )}
+        contentEditable={!isAnalyzing}
+        onInput={handleInput}
+        suppressContentEditableWarning={true}
+      />
+    </div>
+  );
+};
+
+export default TextEditor;
