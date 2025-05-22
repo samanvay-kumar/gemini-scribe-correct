@@ -19,7 +19,7 @@ interface Correction {
 
 const Index = () => {
   const { toast } = useToast();
-  const [text, setText] = useState("");
+  const [text, setText] = useState("heelo");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [correctedText, setCorrectedText] = useState("");
