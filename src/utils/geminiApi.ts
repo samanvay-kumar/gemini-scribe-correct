@@ -1,6 +1,5 @@
-
 // API key for Gemini
-const API_KEY = "AIzaSyCGBv8SEPld2kU_C5zshIg64wkusSJkaxA";
+const API_KEY = "AIzaSyDp2Fr5-ythR2t8GaVDxFgVzgAgL7JBilc";
 
 interface CorrectionResult {
   originalText: string;
