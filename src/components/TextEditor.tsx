@@ -101,21 +101,23 @@ const TextEditor = ({
   }, [value, corrections, isAnalyzing, onCorrectionClick]);
   
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    // Preserve line breaks when getting text content
+    // Get the current HTML content
     const content = e.currentTarget.innerHTML;
-    let text = "";
     
-    // Convert HTML to plain text with line breaks preserved
+    // Process the content to preserve text and line breaks
+    let plainText = "";
+    
     if (content) {
-      // Create a temporary div to extract text with line breaks
-      const temp = document.createElement("div");
-      temp.innerHTML = content;
+      // Create a temporary div to extract text with line breaks preserved
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = content;
       
-      // Replace <br> and </div> tags with newlines
-      text = temp.innerText;
+      // Get plain text with line breaks preserved
+      plainText = tempDiv.innerText;
     }
     
-    onChange(text);
+    // Call the onChange handler with the processed text
+    onChange(plainText);
   };
 
   // Update editor content when value prop changes
