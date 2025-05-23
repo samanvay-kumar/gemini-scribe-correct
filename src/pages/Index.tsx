@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import TextEditor from "@/components/TextEditor";
@@ -24,6 +24,7 @@ const Index = () => {
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [correctedText, setCorrectedText] = useState("");
   const [apiError, setApiError] = useState<string | null>(null);
+  const [lastAnalyzedText, setLastAnalyzedText] = useState<string>("");
 
   // Function to analyze text
   const analyzeText = useCallback(async (textToAnalyze: string) => {
@@ -33,8 +34,14 @@ const Index = () => {
       return;
     }
 
+    // Don't re-analyze the same text
+    if (textToAnalyze === lastAnalyzedText && corrections.length > 0) {
+      return;
+    }
+
     setIsAnalyzing(true);
     setApiError(null);
+    setLastAnalyzedText(textToAnalyze);
     
     try {
       const result = await getCorrections(textToAnalyze);
@@ -42,14 +49,13 @@ const Index = () => {
       setCorrectedText(result.correctedText);
       
       if (result.corrections.length === 0) {
-        // If no corrections were found but text contains obvious errors, show a notice
-        const hasObviousErrors = /[^a-zA-Z0-9\s.,?!'"();\-:]/.test(textToAnalyze) || 
-                                /\s{2,}/.test(textToAnalyze) ||
-                                textToAnalyze.includes("teh") ||
-                                textToAnalyze.includes("gud");
+        // Check for obvious errors that the API might have missed
+        const hasObviousErrors = /[^a-zA-Z0-9\s.,?!'"();\-:\[\]]/.test(textToAnalyze) || 
+                               /\s{2,}/.test(textToAnalyze) ||
+                               /teh|alot|ur|ure|definately|cant|dont|u r/i.test(textToAnalyze);
         
         if (hasObviousErrors && textToAnalyze.length > 10) {
-          setApiError("The API may be rate limited. Please try again later or with a different text.");
+          setApiError("The API may have missed some errors. Please try analyzing again or rephrase your text.");
         }
       }
     } catch (error) {
@@ -64,7 +70,7 @@ const Index = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [toast]);
+  }, [toast, corrections.length, lastAnalyzedText]);
 
   // Handle applying a single correction
   const handleApplyCorrection = (correction: Correction) => {
@@ -73,10 +79,23 @@ const Index = () => {
       text.substring(0, startIndex) + suggestion + text.substring(endIndex);
     setText(newText);
     
-    // Remove the applied correction
-    setCorrections(corrections.filter(c => 
-      c.startIndex !== startIndex || c.endIndex !== endIndex
-    ));
+    // Remove the applied correction and update remaining corrections indices
+    const updatedCorrections = corrections
+      .filter(c => c.startIndex !== startIndex || c.endIndex !== endIndex)
+      .map(c => {
+        // If the correction is after the applied one, adjust indices
+        if (c.startIndex > endIndex) {
+          const lengthDiff = suggestion.length - (endIndex - startIndex);
+          return {
+            ...c,
+            startIndex: c.startIndex + lengthDiff,
+            endIndex: c.endIndex + lengthDiff
+          };
+        }
+        return c;
+      });
+    
+    setCorrections(updatedCorrections);
     
     toast({
       title: "Correction Applied",
@@ -135,6 +154,17 @@ const Index = () => {
     }
     analyzeText(text);
   };
+
+  // Auto check when text changes with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (text.trim() && text.length > 20 && !isAnalyzing && text !== lastAnalyzedText) {
+        analyzeText(text);
+      }
+    }, 1500); // Wait 1.5 seconds after typing stops to analyze
+    
+    return () => clearTimeout(timer);
+  }, [text, isAnalyzing, analyzeText, lastAnalyzedText]);
 
   return (
     <div className="flex flex-col min-h-screen">

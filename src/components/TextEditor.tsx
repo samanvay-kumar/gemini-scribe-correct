@@ -100,8 +100,17 @@ const TextEditor = ({
   
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     const text = e.currentTarget.innerText || "";
+    // Make sure we're updating the text directly without modification
     onChange(text);
   };
+
+  // Update editor content when value prop changes
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (editorRef.current.innerText !== value && !corrections.length) {
+      editorRef.current.innerText = value;
+    }
+  }, [value, corrections.length]);
 
   return (
     <div className="w-full">
