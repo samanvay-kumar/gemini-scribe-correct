@@ -100,23 +100,21 @@ const TextEditor = ({
     }
   }, [value, corrections, isAnalyzing, onCorrectionClick]);
   
+  // This is where the fix for reversed text input happens
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    // Get the current HTML content
-    const content = e.currentTarget.innerHTML;
+    if (!editorRef.current) return;
     
-    // Process the content to preserve text and line breaks
-    let plainText = "";
+    // Get the raw input text directly from the contentEditable div
+    const content = editorRef.current.innerHTML;
     
-    if (content) {
-      // Create a temporary div to extract text with line breaks preserved
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = content;
-      
-      // Get plain text with line breaks preserved
-      plainText = tempDiv.innerText;
-    }
+    // Create a temporary div to convert HTML to plain text while preserving line breaks
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = content;
     
-    // Call the onChange handler with the processed text
+    // Get the plain text with proper line breaks
+    const plainText = tempDiv.innerText;
+    
+    // Update the value through the onChange callback
     onChange(plainText);
   };
 

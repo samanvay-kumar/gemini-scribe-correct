@@ -63,7 +63,7 @@ const Index = () => {
         toast({
           title: "No corrections needed",
           description: "Your text looks good!",
-          variant: "success",
+          variant: "default",  // Changed from "success" to "default" to fix the type error
         });
       }
     } catch (error) {
