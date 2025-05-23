@@ -52,6 +52,8 @@ const TextEditor = ({
       text = `${before}<span class="highlight-error cursor-pointer underline decoration-wavy decoration-red-500" data-start="${startIndex}" data-end="${endIndex}" title="Click to see correction">${error}</span>${after}`;
     });
     
+    // Replace newlines with <br> for proper display of paragraphs
+    text = text.replace(/\n/g, '<br>');
     tempDiv.innerHTML = text || "<br>";
     
     // Replace the editor content with the highlighted text
@@ -99,16 +101,32 @@ const TextEditor = ({
   }, [value, corrections, isAnalyzing, onCorrectionClick]);
   
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const text = e.currentTarget.innerText || "";
-    // Make sure we're updating the text directly without modification
+    // Preserve line breaks when getting text content
+    const content = e.currentTarget.innerHTML;
+    let text = "";
+    
+    // Convert HTML to plain text with line breaks preserved
+    if (content) {
+      // Create a temporary div to extract text with line breaks
+      const temp = document.createElement("div");
+      temp.innerHTML = content;
+      
+      // Replace <br> and </div> tags with newlines
+      text = temp.innerText;
+    }
+    
     onChange(text);
   };
 
   // Update editor content when value prop changes
   useEffect(() => {
     if (!editorRef.current) return;
-    if (editorRef.current.innerText !== value && !corrections.length) {
-      editorRef.current.innerText = value;
+    if (!corrections.length) {
+      // Convert newlines to <br> for proper display
+      const htmlContent = value.replace(/\n/g, '<br>');
+      if (editorRef.current.innerHTML !== htmlContent) {
+        editorRef.current.innerHTML = htmlContent;
+      }
     }
   }, [value, corrections.length]);
 
@@ -120,7 +138,8 @@ const TextEditor = ({
           "editor-container w-full p-4 min-h-[300px] outline-none border rounded-md",
           "whitespace-pre-wrap break-words bg-white",
           isAnalyzing ? "opacity-70" : "shadow-sm",
-          "focus:ring-2 focus:ring-primary focus:border-primary"
+          "focus:ring-2 focus:ring-primary focus:border-primary",
+          "overflow-y-auto max-h-[500px]" // Add scrolling for long texts
         )}
         contentEditable={!isAnalyzing}
         onInput={handleInput}

@@ -25,12 +25,14 @@ const Index = () => {
   const [correctedText, setCorrectedText] = useState("");
   const [apiError, setApiError] = useState<string | null>(null);
   const [lastAnalyzedText, setLastAnalyzedText] = useState<string>("");
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
   // Function to analyze text
   const analyzeText = useCallback(async (textToAnalyze: string) => {
     if (!textToAnalyze.trim()) {
       setCorrections([]);
       setApiError(null);
+      setAnalysisComplete(false);
       return;
     }
 
@@ -42,25 +44,32 @@ const Index = () => {
     setIsAnalyzing(true);
     setApiError(null);
     setLastAnalyzedText(textToAnalyze);
+    setAnalysisComplete(false);
     
     try {
       const result = await getCorrections(textToAnalyze);
       setCorrections(result.corrections);
       setCorrectedText(result.correctedText);
       
-      if (result.corrections.length === 0) {
-        // Check for obvious errors that the API might have missed
-        const hasObviousErrors = /[^a-zA-Z0-9\s.,?!'"();\-:\[\]]/.test(textToAnalyze) || 
-                               /\s{2,}/.test(textToAnalyze) ||
-                               /teh|alot|ur|ure|definately|cant|dont|u r/i.test(textToAnalyze);
-        
-        if (hasObviousErrors && textToAnalyze.length > 10) {
-          setApiError("The API may have missed some errors. Please try analyzing again or rephrase your text.");
-        }
+      // Analysis is complete
+      setAnalysisComplete(true);
+      
+      if (result.corrections.length > 0) {
+        toast({
+          title: `Found ${result.corrections.length} corrections`,
+          description: "Click on highlighted text or use the panel to apply corrections.",
+        });
+      } else {
+        toast({
+          title: "No corrections needed",
+          description: "Your text looks good!",
+          variant: "success",
+        });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to analyze text";
       setApiError(errorMessage);
+      setAnalysisComplete(false);
       toast({
         title: "Error",
         description: errorMessage,
@@ -97,6 +106,9 @@ const Index = () => {
     
     setCorrections(updatedCorrections);
     
+    // Update the lastAnalyzedText to avoid unnecessary re-analysis
+    setLastAnalyzedText(newText);
+    
     toast({
       title: "Correction Applied",
       description: `Changed "${correction.original}" to "${correction.suggestion}"`,
@@ -107,6 +119,8 @@ const Index = () => {
   const handleApplyAll = () => {
     setText(correctedText);
     setCorrections([]);
+    setLastAnalyzedText(correctedText);
+    
     toast({
       title: "Applied All Corrections",
       description: `${corrections.length} corrections applied.`,
@@ -155,8 +169,11 @@ const Index = () => {
     analyzeText(text);
   };
 
-  // Auto check when text changes with debounce
+  // Auto check when text changes with debounce only if analysis isn't complete yet
   useEffect(() => {
+    // Skip auto-check if we've already analyzed this text or the analysis is complete
+    if (text === lastAnalyzedText || analysisComplete) return;
+    
     const timer = setTimeout(() => {
       if (text.trim() && text.length > 20 && !isAnalyzing && text !== lastAnalyzedText) {
         analyzeText(text);
@@ -164,7 +181,7 @@ const Index = () => {
     }, 1500); // Wait 1.5 seconds after typing stops to analyze
     
     return () => clearTimeout(timer);
-  }, [text, isAnalyzing, analyzeText, lastAnalyzedText]);
+  }, [text, isAnalyzing, analyzeText, lastAnalyzedText, analysisComplete]);
 
   return (
     <div className="flex flex-col min-h-screen">
